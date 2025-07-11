@@ -7,16 +7,16 @@ import { useState, useEffect } from 'react';
 const DECORATIONS_COUNT = 50;
 
 function App() {
-    const [backgroundImage, setBackgroundImage] = useState(bromoImage);
+    const [showTengger, setShowTengger] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
             const scrollY = window.scrollY;
 
             if (scrollY > window.innerHeight) {
-                setBackgroundImage(tenggerImage);
+                setShowTengger(true);
             } else {
-                setBackgroundImage(bromoImage);
+                setShowTengger(false);
             }
         };
 
@@ -52,10 +52,22 @@ function App() {
         <>
             <div className="relative min-h-screen flex items-center justify-center">
                 <img
-                    src={backgroundImage}
+                    src={bromoImage}
                     alt="Mount Bromo"
                     className="fixed inset-0 w-full h-full object-cover"
-                    style={{ zIndex: -1 }}
+                    style={{
+                        zIndex: -2,
+                        opacity: showTengger ? 0 : 1
+                    }}
+                />
+                <img
+                    src={tenggerImage}
+                    alt="Mount Tengger"
+                    className="fixed inset-0 w-full h-full object-cover"
+                    style={{
+                        zIndex: -1,
+                        opacity: showTengger ? 1 : 0
+                    }}
                 />
                 <div className="absolute inset-0 bg-blue-500/30"></div>
 
