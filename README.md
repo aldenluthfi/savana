@@ -1,3 +1,9 @@
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="/.github/meta/dark.png">
+  <source media="(prefers-color-scheme: dark)" srcset="/.github/meta/light.png">
+  <img>
+</picture>
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
