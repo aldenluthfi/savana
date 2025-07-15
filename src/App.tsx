@@ -91,10 +91,10 @@ function App() {
                     <h1 className="text-8xl md:text-10xl lg:text-12xl xl:text-14xl font-extrabold mb-4 leading-tight text-yellow-300">
                         SAVANA
                     </h1>
-                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-4 max-w-2xl mx-auto font-extrabold leading-relaxed px-2">
-                        Sustainable Action for the
+                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-4 max-w-3xl mx-auto font-extrabold leading-relaxed px-2">
+                        Sustainable Action for the Village:
                         <br />
-                        Village, Agriculture, Nature, and Health
+                        Environment, Education, and Health in Wonokitri
                     </p>
                 </div>
             </div>
