@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { supabase, type SensorDataRow } from '@/lib/supabase';
 
 interface SensorData {
   id_node: string;
@@ -51,6 +52,35 @@ export default function SensorChart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const storeSensorData = async (sensorData: SensorData) => {
+    try {
+      const dataToStore: SensorDataRow = {
+        id_node: sensorData.id_node,
+        waktu: sensorData.waktu,
+        temperature: sensorData.data_node.temp,
+        humidity: sensorData.data_node.rh,
+        pressure: sensorData.data_node.press,
+        moisture: sensorData.data_node.mous,
+        rain: sensorData.data_node.rain,
+      };
+
+      const { error } = await supabase
+        .from('sensor_data')
+        .upsert([dataToStore], {
+          onConflict: 'id_node,waktu',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error('Error storing sensor data:', error);
+      } else {
+        console.log('Sensor data stored/updated successfully');
+      }
+    } catch (err) {
+      console.error('Error storing sensor data:', err);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -75,6 +105,9 @@ export default function SensorChart() {
         }
 
         setData(result.data);
+
+        await storeSensorData(result.data);
+
         setError(null);
       } catch (err) {
         console.error('Fetch error:', err);
@@ -89,7 +122,7 @@ export default function SensorChart() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    const interval = setInterval(fetchData, 1000 * 60 * 60);
 
     return () => clearInterval(interval);
   }, []);
