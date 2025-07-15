@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://iot.geosains-ui.id/api/:match*"
+    }
+  ]
+}
