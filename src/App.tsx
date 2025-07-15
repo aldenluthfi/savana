@@ -27,7 +27,7 @@ function App() {
     const generateRandomEdelweiss = () => {
         const decorations = [];
         const images = [edelweiss1];
-        const sizes = ['w-8 h-8', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14', 'w-16 h-16'];
+        const sizes = ['size-8', 'size-10', 'size-12', 'size-14', 'size-16'];
 
         for (let i = 0; i < DECORATIONS_COUNT; i++) {
             const randomImage = images[Math.floor(Math.random() * images.length)];
