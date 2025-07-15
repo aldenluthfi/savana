@@ -2,6 +2,7 @@ import bromoImage from './assets/bromo.jpg'
 import tenggerImage from './assets/tengger.jpg'
 import edelweiss1 from './assets/edelweiss_1.png'
 import Squiggle from './components/custom/squiggle';
+import SensorChart from './components/custom/sensor-chart';
 import { useState, useEffect } from 'react';
 
 const DECORATIONS_COUNT = 50;
@@ -50,7 +51,7 @@ function App() {
 
     return (
         <>
-            <div className="relative min-h-screen flex items-center justify-center">
+            <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
                 <img
                     src={bromoImage}
                     alt="Mount Bromo"
@@ -82,7 +83,7 @@ function App() {
                             zIndex: 5
                         }}
                     >
-                        <img src={decoration.src} alt="Edelweiss" className="w-full h-full object-contain opacity-70" />
+                        <img src={decoration.src} alt="Edelweiss" className="w-full h-full object-contain opacity-70 -z-10" />
                     </div>
                 ))}
 
@@ -99,14 +100,14 @@ function App() {
             </div>
 
             <Squiggle className="w-full fill-white -mb-0.25 z-20" />
-            <div className='h-screen bg-white z-10 relative'>
-
+            <div className='h-screen bg-white z-10 relative flex items-center justify-center p-8'>
+                <SensorChart />
             </div>
             <Squiggle className="w-full fill-white -mt-0.25 -scale-y-100 z-10" />
 
             <div className='h-screen bg-blue-500/30 z-10 relative'>
                 <p className="text-3xl md:text-5xl pt-8 mb-4 max-w-2xl mx-auto font-extrabold text-center text-white leading-relaxed">
-                    Our Other Projects
+                    Program Kerja Kami
                 </p>
             </div>
         </>
