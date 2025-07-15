@@ -203,6 +203,7 @@ export default function SensorChart() {
         await fetchHistoricalData();
 
         const apiUrl = `${import.meta.env.VITE_API_URL}?id_node=${import.meta.env.VITE_NODE_ID}&api_key=${import.meta.env.VITE_API_KEY}`;
+        console.log("Fetching sensor data from:", apiUrl); // Debug log
 
         const response = await fetch(apiUrl, {
           method: 'GET',
