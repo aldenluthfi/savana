@@ -251,9 +251,6 @@ export default function SensorChart() {
       <Card key={dataKey} className="w-full">
         <CardHeader>
           <CardTitle>{config.label} ({config.unit})</CardTitle>
-          <CardDescription>
-            {data.length > 0 ? `${data.length} titik data` : 'Tidak ada data tersedia'}
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer

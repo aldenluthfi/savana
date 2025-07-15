@@ -92,7 +92,7 @@ function App() {
                         SAVANA
                     </h1>
                     <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-4 max-w-3xl mx-auto font-extrabold leading-relaxed px-2">
-                        Sustainable Action for the Village:
+                        Sustainable Action for the Village
                         <br />
                         Environment, Education, and Health in Wonokitri
                     </p>
