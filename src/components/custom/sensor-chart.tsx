@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { supabase, type SensorDataRow } from '@/lib/supabase';
 
 interface SensorData {
@@ -21,36 +21,151 @@ interface ApiResponse {
   status: string;
 }
 
-const chartConfig = {
+interface ChartDataPoint {
+  time: string;
+  value: number;
+  timestamp: number;
+}
+
+const chartConfigs = {
   temperature: {
     label: "Temperature (°C)",
-    color: "var(--chart-1)",
+    color: "hsl(var(--chart-1))",
+    unit: "°C",
   },
   humidity: {
     label: "Humidity (%)",
-    color: "var(--chart-2)",
+    color: "hsl(var(--chart-2))",
+    unit: "%",
   },
   pressure: {
     label: "Pressure (hPa)",
-    color: "var(--chart-3)",
+    color: "hsl(var(--chart-3))",
+    unit: "hPa",
   },
   moisture: {
     label: "Moisture (%)",
-    color: "var(--chart-4)",
+    color: "hsl(var(--chart-4))",
+    unit: "%",
   },
   rain: {
     label: "Rain (mm)",
-    color: "var(--chart-5)",
-  },
-  value: {
-    label: "Value",
+    color: "hsl(var(--chart-5))",
+    unit: "mm",
   },
 };
 
 export default function SensorChart() {
-  const [data, setData] = useState<SensorData | null>(null);
+  const [apiData, setApiData] = useState<SensorData | null>(null);
+  const [historicalData, setHistoricalData] = useState<{
+    temperature: ChartDataPoint[];
+    humidity: ChartDataPoint[];
+    pressure: ChartDataPoint[];
+    moisture: ChartDataPoint[];
+    rain: ChartDataPoint[];
+  }>({
+    temperature: [],
+    humidity: [],
+    pressure: [],
+    moisture: [],
+    rain: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchHistoricalData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sensor_data')
+        .select('*')
+        .order('waktu', { ascending: true })
+        .limit(50);
+
+      if (error) {
+        console.error('Error fetching historical data:', error);
+        return;
+      }
+
+      if (data) {
+        const processedData = {
+          temperature: data.map((item: SensorDataRow) => {
+            const utcDate = new Date(item.waktu + 'Z'); // Explicitly mark as UTC
+            return {
+              time: utcDate.toLocaleString('id-ID', { 
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit'
+              }),
+              value: item.temperature || 0,
+              timestamp: utcDate.getTime(),
+            };
+          }),
+          humidity: data.map((item: SensorDataRow) => {
+            const utcDate = new Date(item.waktu + 'Z');
+            return {
+              time: utcDate.toLocaleString('id-ID', { 
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit'
+              }),
+              value: item.humidity || 0,
+              timestamp: utcDate.getTime(),
+            };
+          }),
+          pressure: data.map((item: SensorDataRow) => {
+            const utcDate = new Date(item.waktu + 'Z');
+            return {
+              time: utcDate.toLocaleString('id-ID', { 
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit'
+              }),
+              value: item.pressure || 0,
+              timestamp: utcDate.getTime(),
+            };
+          }),
+          moisture: data.map((item: SensorDataRow) => {
+            const utcDate = new Date(item.waktu + 'Z');
+            return {
+              time: utcDate.toLocaleString('id-ID', { 
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit'
+              }),
+              value: item.moisture || 0,
+              timestamp: utcDate.getTime(),
+            };
+          }),
+          rain: data.map((item: SensorDataRow) => {
+            const utcDate = new Date(item.waktu + 'Z');
+            return {
+              time: utcDate.toLocaleString('id-ID', { 
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit'
+              }),
+              value: item.rain || 0,
+              timestamp: utcDate.getTime(),
+            };
+          }),
+        };
+
+        setHistoricalData(processedData);
+      }
+    } catch (err) {
+      console.error('Error fetching historical data:', err);
+    }
+  };
 
   const storeSensorData = async (sensorData: SensorData) => {
     try {
@@ -75,6 +190,7 @@ export default function SensorChart() {
         console.error('Error storing sensor data:', error);
       } else {
         console.log('Sensor data stored/updated successfully');
+        await fetchHistoricalData();
       }
     } catch (err) {
       console.error('Error storing sensor data:', err);
@@ -84,6 +200,8 @@ export default function SensorChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        await fetchHistoricalData();
+
         const apiUrl = `${import.meta.env.VITE_API_URL}?id_node=${import.meta.env.VITE_NODE_ID}&api_key=${import.meta.env.VITE_API_KEY}`;
 
         const response = await fetch(apiUrl, {
@@ -104,15 +222,15 @@ export default function SensorChart() {
           throw new Error(`API error: ${result.status}`);
         }
 
-        setData(result.data);
-
+        setApiData(result.data);
         await storeSensorData(result.data);
-
         setError(null);
       } catch (err) {
         console.error('Fetch error:', err);
+        await fetchHistoricalData();
+
         if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
-          setError('Network error: Unable to connect to the API. This might be due to CORS restrictions or network issues.');
+          setError('Network error: Unable to connect to the API. Showing historical data only.');
         } else {
           setError(err instanceof Error ? err.message : 'An error occurred');
         }
@@ -127,109 +245,96 @@ export default function SensorChart() {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
-    return (
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>Loading Sensor Data...</CardTitle>
-          <CardDescription>Fetching environmental data...</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
+  const renderChart = (dataKey: keyof typeof chartConfigs, data: ChartDataPoint[]) => {
+    const config = chartConfigs[dataKey];
 
-  if (error) {
     return (
-      <Card className="w-full max-w-4xl mx-auto">
+      <Card key={dataKey} className="w-full">
         <CardHeader>
-          <CardTitle>Connection Error</CardTitle>
-          <CardDescription className="text-red-500">{error}</CardDescription>
+          <CardTitle>{config.label}</CardTitle>
+          <CardDescription>
+            {data.length > 0 ? `${data.length} data points` : 'No data available'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-gray-600 mt-2">
-            <p>Possible solutions:</p>
-            <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>Check your internet connection</li>
-              <li>The API server might be temporarily unavailable</li>
-              <li>CORS policy might be blocking the request</li>
-            </ul>
-          </div>
+          <ChartContainer config={{ [dataKey]: config }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="time"
+                  tickLine={false}
+                  axisLine={false}
+                  className="text-xs"
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  className="text-xs"
+                />
+                <ChartTooltip
+                  content={<ChartTooltipContent />}
+                  formatter={(value: number) => [
+                    `${value.toFixed(2)} ${config.unit}`,
+                    config.label
+                  ]}
+                  labelFormatter={(label: string) => `Time: ${label}`}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={config.color}
+                  strokeWidth={2}
+                  dot={{ fill: config.color, strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
     );
-  }
+  };
 
-  if (!data) {
-    return null;
+  if (loading) {
+    return (
+      <div className="w-full max-w-7xl mx-auto space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading Sensor Data...</CardTitle>
+            <CardDescription>Fetching environmental data...</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
-
-  const chartData = [
-    {
-      name: "Temperature",
-      value: data.data_node.temp,
-      fill: "var(--color-temperature)",
-    },
-    {
-      name: "Humidity",
-      value: data.data_node.rh,
-      fill: "var(--color-humidity)",
-    },
-    {
-      name: "Pressure",
-      value: data.data_node.press / 10,
-      fill: "var(--color-pressure)",
-    },
-    {
-      name: "Moisture",
-      value: data.data_node.mous,
-      fill: "var(--color-moisture)",
-    },
-    {
-      name: "Rain",
-      value: data.data_node.rain,
-      fill: "var(--color-rain)",
-    },
-  ];
 
   return (
-    <Card className="w-full mx-32">
-      <CardHeader>
-        <CardTitle>Data Cuaca Wonokitri</CardTitle>
-        <CardDescription>
-          Node: {data.id_node} | Last Updated: {new Date(data.waktu).toLocaleString()}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="name"
-              tickLine={false}
-              axisLine={false}
-              className="text-xs"
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              className="text-xs"
-            />
-            <ChartTooltip
-              content={<ChartTooltipContent />}
-              formatter={(value: number, name: string) => {
-                if (name === "Pressure") {
-                  return [(value * 10).toFixed(2) + " hPa", "Pressure"];
-                }
-                const unit = name === "Temperature" ? "°C" :
-                  name === "Humidity" || name === "Moisture" ? "%" :
-                    name === "Rain" ? "mm" : "";
-                return [value.toFixed(2) + " " + unit, name];
-              }}
-            />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Cuaca Wonokitri</CardTitle>
+          <CardDescription>
+            {apiData ? (
+              <>Node: {apiData.id_node} | Last Updated: {new Date(apiData.waktu + 'Z').toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}</>
+            ) : (
+              'Historical data view'
+            )}
+            {error && (
+              <div className="text-amber-600 text-sm mt-2">
+                {error}
+              </div>
+            )}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {Object.entries(historicalData).map(([key, data]) =>
+          renderChart(key as keyof typeof chartConfigs, data)
+        )}
+      </div>
+    </div>
   );
 }
