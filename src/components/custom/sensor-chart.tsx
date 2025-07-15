@@ -29,27 +29,27 @@ interface ChartDataPoint {
 
 const chartConfigs = {
   temperature: {
-    label: "Temperature",
+    label: "Suhu",
     color: "var(--chart-1)",
     unit: "°C",
   },
   humidity: {
-    label: "Humidity",
+    label: "Kelembapan",
     color: "var(--chart-2)",
     unit: "%",
   },
   pressure: {
-    label: "Pressure",
+    label: "Tekanan",
     color: "var(--chart-3)",
     unit: "hPa",
   },
   moisture: {
-    label: "Moisture",
+    label: "Kelembapan Tanah",
     color: "var(--chart-4)",
     unit: "%",
   },
   rain: {
-    label: "Rain",
+    label: "Curah Hujan",
     color: "var(--chart-5)",
     unit: "mm",
   },
@@ -252,7 +252,7 @@ export default function SensorChart() {
         <CardHeader>
           <CardTitle>{config.label} ({config.unit})</CardTitle>
           <CardDescription>
-            {data.length > 0 ? `${data.length} data points` : 'No data available'}
+            {data.length > 0 ? `${data.length} titik data` : 'Tidak ada data tersedia'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -314,8 +314,8 @@ export default function SensorChart() {
       <div className="w-full max-w-7xl mx-auto space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Loading Sensor Data...</CardTitle>
-            <CardDescription>Fetching environmental data...</CardDescription>
+            <CardTitle>Memuat Data Sensor...</CardTitle>
+            <CardDescription>Mengambil data lingkungan...</CardDescription>
           </CardHeader>
         </Card>
       </div>
