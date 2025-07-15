@@ -88,10 +88,10 @@ function App() {
                 ))}
 
                 <div className="relative z-10 text-center text-white mx-auto px-4">
-                    <h1 className="text-12xl md:text-14xl font-extrabold mb-4 leading-tight text-yellow-300">
+                    <h1 className="text-8xl md:text-10xl lg:text-12xl xl:text-14xl font-extrabold mb-4 leading-tight text-yellow-300">
                         SAVANA
                     </h1>
-                    <p className="text-2xl md:text-3xl mb-4 max-w-2xl mx-auto font-extrabold leading-relaxed">
+                    <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-4 max-w-2xl mx-auto font-extrabold leading-relaxed px-2">
                         Sustainable Action for the
                         <br />
                         Village, Agriculture, Nature, and Health
@@ -106,7 +106,7 @@ function App() {
             <Squiggle className="w-full fill-white -mt-0.25 -scale-y-100 z-10" />
 
             <div className='h-screen bg-blue-500/30 z-10 relative'>
-                <p className="text-3xl md:text-5xl pt-8 mb-4 max-w-2xl mx-auto font-extrabold text-center text-white leading-relaxed">
+                <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl pt-8 mb-4 max-w-2xl mx-auto font-extrabold text-center text-white leading-relaxed px-4">
                     Program Kerja Kami
                 </p>
             </div>

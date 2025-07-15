@@ -324,7 +324,7 @@ export default function SensorChart() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
-      <div className="mb-4 text-center">
+      <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold">Data Cuaca Wonokitri</h1>
         <div className="text-base mt-1">
           {apiData ? (
@@ -342,11 +342,17 @@ export default function SensorChart() {
         )}
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {Object.entries(historicalData).map(([key, data]) =>
-          renderChart(key as keyof typeof chartConfigs, data)
-        )}
+      <div className="space-y-6">
+        <div className="w-full">
+          {renderChart('rain', historicalData.rain)}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {renderChart('temperature', historicalData.temperature)}
+          {renderChart('humidity', historicalData.humidity)}
+          {renderChart('pressure', historicalData.pressure)}
+          {renderChart('moisture', historicalData.moisture)}
+        </div>
       </div>
     </div>
   );
