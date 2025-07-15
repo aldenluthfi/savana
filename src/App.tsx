@@ -88,7 +88,7 @@ function App() {
                 ))}
 
                 <div className="relative z-10 text-center text-white mx-auto px-4">
-                    <h1 className="text-8xl md:text-10xl lg:text-12xl xl:text-14xl font-extrabold mb-4 leading-tight text-yellow-300">
+                    <h1 className="text-7xl sm:text-8xl md:text-10xl lg:text-12xl xl:text-14xl font-extrabold mb-4 leading-tight text-yellow-300">
                         SAVANA
                     </h1>
                     <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-4 max-w-3xl mx-auto font-extrabold leading-relaxed px-2">
