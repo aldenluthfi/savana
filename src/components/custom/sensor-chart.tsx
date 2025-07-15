@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '../ui/chart';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, AreaChart, Area } from 'recharts';
 import { supabase, type SensorDataRow } from '@/lib/supabase';
 
 interface SensorData {
@@ -29,28 +29,28 @@ interface ChartDataPoint {
 
 const chartConfigs = {
   temperature: {
-    label: "Temperature (°C)",
-    color: "hsl(var(--chart-1))",
+    label: "Temperature",
+    color: "var(--chart-1)",
     unit: "°C",
   },
   humidity: {
-    label: "Humidity (%)",
-    color: "hsl(var(--chart-2))",
+    label: "Humidity",
+    color: "var(--chart-2)",
     unit: "%",
   },
   pressure: {
-    label: "Pressure (hPa)",
-    color: "hsl(var(--chart-3))",
+    label: "Pressure",
+    color: "var(--chart-3)",
     unit: "hPa",
   },
   moisture: {
-    label: "Moisture (%)",
-    color: "hsl(var(--chart-4))",
+    label: "Moisture",
+    color: "var(--chart-4)",
     unit: "%",
   },
   rain: {
-    label: "Rain (mm)",
-    color: "hsl(var(--chart-5))",
+    label: "Rain",
+    color: "var(--chart-5)",
     unit: "mm",
   },
 };
@@ -79,7 +79,6 @@ export default function SensorChart() {
         .from('sensor_data')
         .select('*')
         .order('waktu', { ascending: true })
-        .limit(50);
 
       if (error) {
         console.error('Error fetching historical data:', error);
@@ -251,46 +250,59 @@ export default function SensorChart() {
     return (
       <Card key={dataKey} className="w-full">
         <CardHeader>
-          <CardTitle>{config.label}</CardTitle>
+          <CardTitle>{config.label} ({config.unit})</CardTitle>
           <CardDescription>
             {data.length > 0 ? `${data.length} data points` : 'No data available'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={{ [dataKey]: config }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="time"
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs"
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs"
-                />
-                <ChartTooltip
-                  content={<ChartTooltipContent />}
-                  formatter={(value: number) => [
-                    `${value.toFixed(2)} ${config.unit}`,
-                    config.label
-                  ]}
-                  labelFormatter={(label: string) => `Time: ${label}`}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke={config.color}
-                  strokeWidth={2}
-                  dot={{ fill: config.color, strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <ChartContainer
+            config={{ [dataKey]: config }}
+            className="aspect-auto h-[250px] w-full"
+          >
+            <AreaChart
+              accessibilityLayer
+              data={data}
+              margin={{
+                left: 12,
+                right: 12,
+              }}
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="time"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                className="text-xs"
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                className="text-xs"
+              />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    className="w-[150px]"
+                    labelFormatter={(label: string) => label}
+                    indicator="dot"
+                    nameKey="value"
+                    formatter={(value) => [value, config.unit]}
+                  />
+                }
+              />
+              <Area
+                dataKey="value"
+                type="natural"
+                fill={`var(--color-${dataKey})`}
+                stroke={`var(--color-${dataKey})`}
+                strokeWidth={2}
+              />
+            </AreaChart>
           </ChartContainer>
         </CardContent>
       </Card>
@@ -312,24 +324,25 @@ export default function SensorChart() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Cuaca Wonokitri</CardTitle>
-          <CardDescription>
-            {apiData ? (
-              <>Node: {apiData.id_node} | Last Updated: {new Date(apiData.waktu + 'Z').toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}</>
-            ) : (
-              'Historical data view'
-            )}
-            {error && (
-              <div className="text-amber-600 text-sm mt-2">
-                {error}
-              </div>
-            )}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="mb-4 text-center">
+        <h1 className="text-2xl font-bold">Data Cuaca Wonokitri</h1>
+        <div className="text-base mt-1">
+          {apiData ? (
+            <>
+              Node: {apiData.id_node} | Last Updated: {new Date(apiData.waktu + 'Z').toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
+            </>
+          ) : (
+            'Historical data view'
+          )}
+        </div>
+        {error && (
+          <div className="text-amber-600 text-sm mt-2">
+            {error}
+          </div>
+        )}
+      </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {Object.entries(historicalData).map(([key, data]) =>
           renderChart(key as keyof typeof chartConfigs, data)
