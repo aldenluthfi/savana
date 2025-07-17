@@ -442,20 +442,7 @@ export default function SensorChart() {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold">Data Cuaca Wonokitri</h1>
-        <div className="text-base mt-1">
-          {hasApiData ? (
-            <div className="space-y-1">
-              {latestData.map((data) => (
-                <div key={data.id_node}>
-                  Node {data.id_node}: Last Updated {new Date(data.waktu + 'Z').toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
-                </div>
-              ))}
-            </div>
-          ) : (
-            'Historical data view - Multiple nodes'
-          )}
-        </div>
+        <h1 className="text-3xl font-bold">Data Cuaca Wonokitri</h1>
         {error && (
           <div className="text-amber-600 text-sm mt-2">
             {error}
