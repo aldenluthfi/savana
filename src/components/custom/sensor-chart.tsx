@@ -380,12 +380,18 @@ export default function SensorChart() {
                     className="w-[200px]"
                     labelFormatter={(label, payload) => {
                       if (Array.isArray(payload) && payload.length > 0) {
-                        const hoveredNode = payload[0].name;
-                        const nodeName =
-                          hoveredNode === 'node1'
-                            ? nodeConfigs[import.meta.env.VITE_NODE_ID_1]?.name || "Node 1"
-                            : nodeConfigs[import.meta.env.VITE_NODE_ID_2]?.name || "Node 2";
-                        return `${label} (${nodeName})`;
+                        const dataPoint = payload[0].payload as MultiNodeChartDataPoint;
+                        const date = new Date(dataPoint.timestamp);
+                        const formattedDate = date.toLocaleString('id-ID', {
+                          timeZone: 'Asia/Jakarta',
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        });
+                        return formattedDate;
                       }
                       return label;
                     }}
