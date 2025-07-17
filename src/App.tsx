@@ -100,15 +100,8 @@ function App() {
             </div>
 
             <Squiggle className="w-full fill-white -mb-0.25 z-20" />
-            <div className='min-h-screen bg-white z-10 relative flex items-center justify-center p-8'>
+            <div className='min-h-screen bg-white z-10 relative flex items-center justify-center p-8 pb-20'>
                 <SensorChart />
-            </div>
-            <Squiggle className="w-full fill-white -mt-0.25 -scale-y-100 z-10" />
-
-            <div className='h-screen bg-blue-500/30 z-10 relative'>
-                <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl pt-8 mb-4 max-w-2xl mx-auto font-extrabold text-center text-white leading-relaxed px-4">
-                    Program Kerja Kami
-                </p>
             </div>
         </>
     )

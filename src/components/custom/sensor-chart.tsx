@@ -75,34 +75,54 @@ export default function SensorChart() {
     [import.meta.env.VITE_NODE_ID_2]: true,
   });
 
-  const getDateRangeFilter = (range: DateRange): Date | null => {
-    const now = new Date();
-    switch (range) {
-      case '1hari':
-        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      case '1minggu':
-        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      case '1bulan':
-        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      case '1tahun':
-        return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-      case 'semua':
-        return null;
-      default:
-        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    }
-  };
-
   const fetchHistoricalData = async (dateRange: DateRange = selectedDateRange) => {
     try {
+      // Get enabled node IDs
+      const enabledNodeIds = Object.entries(enabledNodes)
+        .filter(([_, enabled]) => enabled)
+        .map(([nodeId, _]) => nodeId);
+
+      // If no nodes are enabled, return empty data
+      if (enabledNodeIds.length === 0) {
+        setHistoricalData({
+          temperature: [],
+          humidity: [],
+          pressure: [],
+          moisture: [],
+          rain: [],
+        });
+        return;
+      }
+
       let query = supabase
         .from('sensor_data')
         .select('*')
+        .in('id_node', enabledNodeIds)
         .order('waktu', { ascending: true });
 
-      const dateFilter = getDateRangeFilter(dateRange);
-      if (dateFilter) {
-        query = query.gte('waktu', dateFilter.toISOString());
+      // Apply date filtering at query level
+      if (dateRange !== 'semua') {
+        const now = new Date();
+        let filterDate: Date;
+
+        switch (dateRange) {
+          case '1hari':
+            filterDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            break;
+          case '1minggu':
+            filterDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case '1bulan':
+            filterDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case '1tahun':
+            filterDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            filterDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        }
+
+        query = query.gte('waktu', filterDate.toISOString());
       }
 
       const { data, error } = await query;
@@ -197,7 +217,6 @@ export default function SensorChart() {
       if (error) {
         console.error('Error storing sensor data:', error);
       } else {
-        console.log('Sensor data stored/updated successfully');
         await fetchHistoricalData(selectedDateRange);
       }
     } catch (err) {
@@ -282,13 +301,33 @@ export default function SensorChart() {
 
   useEffect(() => {
     fetchHistoricalData(selectedDateRange);
-  }, [selectedDateRange]);
+  }, [selectedDateRange, enabledNodes]);
 
   const toggleNode = (nodeId: string) => {
-    setEnabledNodes(prev => ({
-      ...prev,
-      [nodeId]: !prev[nodeId]
-    }));
+    setEnabledNodes(prev => {
+      const newState = { ...prev };
+
+      // If turning off this node
+      if (prev[nodeId]) {
+        // Check if this is the only enabled node
+        const enabledCount = Object.values(prev).filter(Boolean).length;
+
+        if (enabledCount === 1) {
+          // Turn off this node and turn on all other nodes
+          Object.keys(newState).forEach(id => {
+            newState[id] = id !== nodeId;
+          });
+        } else {
+          // Just turn off this node
+          newState[nodeId] = false;
+        }
+      } else {
+        // Turning on this node
+        newState[nodeId] = true;
+      }
+
+      return newState;
+    });
   };
 
   const renderMultiNodeChart = (dataKey: string, data: MultiNodeChartDataPoint[], label: string, unit: string) => {
@@ -296,7 +335,6 @@ export default function SensorChart() {
       <Card key={dataKey} className="w-full">
         <CardHeader>
           <CardTitle>{label} ({unit})</CardTitle>
-          <CardDescription>Data dari kedua sensor node</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer
@@ -353,7 +391,7 @@ export default function SensorChart() {
                     }}
                     indicator="dot"
                     formatter={(value) => [
-                      value ? `${value} ${unit}` : 'No data'
+                      value !== null && value !== undefined ? `${value} ${unit}` : 'No data'
                     ]}
                   />
                 }
@@ -425,60 +463,49 @@ export default function SensorChart() {
         )}
       </div>
 
-      {/* Controls Panel */}
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Pengaturan Display</CardTitle>
-          <CardDescription>Atur rentang waktu dan node yang ditampilkan</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Date Range Selector */}
-          <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">Rentang Waktu:</label>
-            <Select value={selectedDateRange} onValueChange={(value: DateRange) => setSelectedDateRange(value)}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Pilih rentang waktu" />
-              </SelectTrigger>
-              <SelectContent>
-                {dateRangeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Node Filters */}
-          <div className="flex flex-col space-y-3">
-            <label className="text-sm font-medium">Filter Node:</label>
-            <div className="flex flex-wrap gap-4">
-              {Object.entries(nodeConfigs).map(([nodeId, config]) => (
-                <div key={nodeId} className="flex items-center space-x-3">
-                  <Switch
-                    checked={enabledNodes[nodeId]}
-                    onCheckedChange={() => toggleNode(nodeId)}
-                    id={`node-${nodeId}`}
-                  />
-                  <label
-                    htmlFor={`node-${nodeId}`}
-                    className="text-sm flex items-center space-x-2 cursor-pointer"
-                  >
-                    <div
-                      className="w-4 h-4 rounded"
-                      style={{ backgroundColor: config.color }}
-                    />
-                    <span>{config.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {nodeId}
-                    </Badge>
-                  </label>
-                </div>
+      <div className="flex flex-col lg:flex-row lg:justify-between gap-4">
+        <div className="flex flex-col space-y-2">
+          <Select value={selectedDateRange} onValueChange={(value: DateRange) => setSelectedDateRange(value)}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Pilih rentang waktu" />
+            </SelectTrigger>
+            <SelectContent>
+              {dateRangeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
               ))}
-            </div>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col justify-center">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+            {Object.entries(nodeConfigs).map(([nodeId, config]) => (
+              <div key={nodeId} className="flex items-center space-x-3">
+                <Switch
+                  checked={enabledNodes[nodeId]}
+                  onCheckedChange={() => toggleNode(nodeId)}
+                  id={`node-${nodeId}`}
+                />
+                <label
+                  htmlFor={`node-${nodeId}`}
+                  className="text-sm flex items-center space-x-2 cursor-pointer"
+                >
+                  <div
+                    className="w-4 h-4 rounded"
+                    style={{ backgroundColor: config.color }}
+                  />
+                  <span>{config.name}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {nodeId}
+                  </Badge>
+                </label>
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <div className="space-y-6">
         <div className="w-full">
