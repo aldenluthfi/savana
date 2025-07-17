@@ -25,6 +25,14 @@ interface ChartDataPoint {
   time: string;
   value: number;
   timestamp: number;
+  node: string;
+}
+
+interface MultiNodeChartDataPoint {
+  time: string;
+  node1: number | null;
+  node2: number | null;
+  timestamp: number;
 }
 
 const chartConfigs = {
@@ -55,14 +63,25 @@ const chartConfigs = {
   },
 };
 
+const nodeConfigs = {
+  [import.meta.env.VITE_NODE_ID_1]: {
+    name: "Node 1",
+    color: "var(--chart-1)",
+  },
+  [import.meta.env.VITE_NODE_ID_2]: {
+    name: "Node 2", 
+    color: "var(--chart-2)",
+  },
+};
+
 export default function SensorChart() {
-  const [apiData, setApiData] = useState<SensorData | null>(null);
+  const [apiData, setApiData] = useState<{ [key: string]: SensorData }>({});
   const [historicalData, setHistoricalData] = useState<{
-    temperature: ChartDataPoint[];
-    humidity: ChartDataPoint[];
-    pressure: ChartDataPoint[];
-    moisture: ChartDataPoint[];
-    rain: ChartDataPoint[];
+    temperature: MultiNodeChartDataPoint[];
+    humidity: MultiNodeChartDataPoint[];
+    pressure: MultiNodeChartDataPoint[];
+    moisture: MultiNodeChartDataPoint[];
+    rain: MultiNodeChartDataPoint[];
   }>({
     temperature: [],
     humidity: [],
@@ -78,7 +97,7 @@ export default function SensorChart() {
       const { data, error } = await supabase
         .from('sensor_data')
         .select('*')
-        .order('waktu', { ascending: true })
+        .order('waktu', { ascending: true });
 
       if (error) {
         console.error('Error fetching historical data:', error);
@@ -86,77 +105,59 @@ export default function SensorChart() {
       }
 
       if (data) {
+        // Group data by timestamp and combine both nodes
+        const groupedData: { [timestamp: string]: { [nodeId: string]: SensorDataRow } } = {};
+        
+        data.forEach((item: SensorDataRow) => {
+          const utcDate = new Date(item.waktu + 'Z');
+          const timeKey = utcDate.toLocaleString('id-ID', { 
+            timeZone: 'Asia/Jakarta',
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit'
+          });
+          
+          if (!groupedData[timeKey]) {
+            groupedData[timeKey] = {};
+          }
+          groupedData[timeKey][item.id_node] = item;
+        });
+
+        // Convert to chart format
+        const timestamps = Object.keys(groupedData).sort();
+        
         const processedData = {
-          temperature: data.map((item: SensorDataRow) => {
-            const utcDate = new Date(item.waktu + 'Z'); // Explicitly mark as UTC
-            return {
-              time: utcDate.toLocaleString('id-ID', { 
-                timeZone: 'Asia/Jakarta',
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit'
-              }),
-              value: item.temperature || 0,
-              timestamp: utcDate.getTime(),
-            };
-          }),
-          humidity: data.map((item: SensorDataRow) => {
-            const utcDate = new Date(item.waktu + 'Z');
-            return {
-              time: utcDate.toLocaleString('id-ID', { 
-                timeZone: 'Asia/Jakarta',
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit'
-              }),
-              value: item.humidity || 0,
-              timestamp: utcDate.getTime(),
-            };
-          }),
-          pressure: data.map((item: SensorDataRow) => {
-            const utcDate = new Date(item.waktu + 'Z');
-            return {
-              time: utcDate.toLocaleString('id-ID', { 
-                timeZone: 'Asia/Jakarta',
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit'
-              }),
-              value: item.pressure || 0,
-              timestamp: utcDate.getTime(),
-            };
-          }),
-          moisture: data.map((item: SensorDataRow) => {
-            const utcDate = new Date(item.waktu + 'Z');
-            return {
-              time: utcDate.toLocaleString('id-ID', { 
-                timeZone: 'Asia/Jakarta',
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit'
-              }),
-              value: item.moisture || 0,
-              timestamp: utcDate.getTime(),
-            };
-          }),
-          rain: data.map((item: SensorDataRow) => {
-            const utcDate = new Date(item.waktu + 'Z');
-            return {
-              time: utcDate.toLocaleString('id-ID', { 
-                timeZone: 'Asia/Jakarta',
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit'
-              }),
-              value: item.rain || 0,
-              timestamp: utcDate.getTime(),
-            };
-          }),
+          temperature: timestamps.map(timeKey => ({
+            time: timeKey,
+            node1: groupedData[timeKey][import.meta.env.VITE_NODE_ID_1]?.temperature || null,
+            node2: groupedData[timeKey][import.meta.env.VITE_NODE_ID_2]?.temperature || null,
+            timestamp: new Date(Object.values(groupedData[timeKey])[0].waktu + 'Z').getTime(),
+          })),
+          humidity: timestamps.map(timeKey => ({
+            time: timeKey,
+            node1: groupedData[timeKey][import.meta.env.VITE_NODE_ID_1]?.humidity || null,
+            node2: groupedData[timeKey][import.meta.env.VITE_NODE_ID_2]?.humidity || null,
+            timestamp: new Date(Object.values(groupedData[timeKey])[0].waktu + 'Z').getTime(),
+          })),
+          pressure: timestamps.map(timeKey => ({
+            time: timeKey,
+            node1: groupedData[timeKey][import.meta.env.VITE_NODE_ID_1]?.pressure || null,
+            node2: groupedData[timeKey][import.meta.env.VITE_NODE_ID_2]?.pressure || null,
+            timestamp: new Date(Object.values(groupedData[timeKey])[0].waktu + 'Z').getTime(),
+          })),
+          moisture: timestamps.map(timeKey => ({
+            time: timeKey,
+            node1: groupedData[timeKey][import.meta.env.VITE_NODE_ID_1]?.moisture || null,
+            node2: groupedData[timeKey][import.meta.env.VITE_NODE_ID_2]?.moisture || null,
+            timestamp: new Date(Object.values(groupedData[timeKey])[0].waktu + 'Z').getTime(),
+          })),
+          rain: timestamps.map(timeKey => ({
+            time: timeKey,
+            node1: groupedData[timeKey][import.meta.env.VITE_NODE_ID_1]?.rain || null,
+            node2: groupedData[timeKey][import.meta.env.VITE_NODE_ID_2]?.rain || null,
+            timestamp: new Date(Object.values(groupedData[timeKey])[0].waktu + 'Z').getTime(),
+          })),
         };
 
         setHistoricalData(processedData);
@@ -196,33 +197,60 @@ export default function SensorChart() {
     }
   };
 
+  const fetchNodeData = async (nodeId: string) => {
+    const apiUrl = `${import.meta.env.VITE_API_URL}?id_node=${nodeId}&api_key=${import.meta.env.VITE_API_KEY}`;
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      mode: 'cors',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status} for node ${nodeId}`);
+    }
+
+    const result: ApiResponse = await response.json();
+
+    if (result.status !== 'Ok') {
+      throw new Error(`API error: ${result.status} for node ${nodeId}`);
+    }
+
+    return result.data;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         await fetchHistoricalData();
 
-        const apiUrl = `${import.meta.env.VITE_API_URL}?id_node=${import.meta.env.VITE_NODE_ID}&api_key=${import.meta.env.VITE_API_KEY}`;
+        // Fetch data from both nodes
+        const nodeIds = [import.meta.env.VITE_NODE_ID_1, import.meta.env.VITE_NODE_ID_2];
+        const nodeDataPromises = nodeIds.map(nodeId => 
+          fetchNodeData(nodeId).catch(err => {
+            console.error(`Error fetching data for node ${nodeId}:`, err);
+            return null;
+          })
+        );
 
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          mode: 'cors',
+        const nodeResults = await Promise.all(nodeDataPromises);
+        const newApiData: { [key: string]: SensorData } = {};
+
+        nodeResults.forEach((data, index) => {
+          if (data) {
+            newApiData[nodeIds[index]] = data;
+          }
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        setApiData(newApiData);
+
+        // Store data for each node
+        for (const data of Object.values(newApiData)) {
+          await storeSensorData(data);
         }
 
-        const result: ApiResponse = await response.json();
-
-        if (result.status !== 'Ok') {
-          throw new Error(`API error: ${result.status}`);
-        }
-
-        setApiData(result.data);
-        await storeSensorData(result.data);
         setError(null);
       } catch (err) {
         console.error('Fetch error:', err);
@@ -244,17 +272,21 @@ export default function SensorChart() {
     return () => clearInterval(interval);
   }, []);
 
-  const renderChart = (dataKey: keyof typeof chartConfigs, data: ChartDataPoint[]) => {
+  const renderMultiNodeChart = (dataKey: keyof typeof chartConfigs, data: MultiNodeChartDataPoint[]) => {
     const config = chartConfigs[dataKey];
 
     return (
       <Card key={dataKey} className="w-full">
         <CardHeader>
           <CardTitle>{config.label} ({config.unit})</CardTitle>
+          <CardDescription>Data dari kedua sensor node</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer
-            config={{ [dataKey]: config }}
+            config={{ 
+              node1: { label: nodeConfigs[import.meta.env.VITE_NODE_ID_1]?.name || "Node 1", color: "var(--chart-1)" },
+              node2: { label: nodeConfigs[import.meta.env.VITE_NODE_ID_2]?.name || "Node 2", color: "var(--chart-3)" }
+            }}
             className="aspect-auto h-[250px] w-full"
           >
             <AreaChart
@@ -284,20 +316,32 @@ export default function SensorChart() {
                 cursor={false}
                 content={
                   <ChartTooltipContent
-                    className="w-[150px]"
+                    className="w-[200px]"
                     labelFormatter={(label: string) => label}
                     indicator="dot"
-                    nameKey="value"
-                    formatter={(value) => [value, config.unit]}
+                    formatter={(value, name) => [
+                      value ? `${value} ${config.unit}` : 'No data',
+                      name === 'node1' ? nodeConfigs[import.meta.env.VITE_NODE_ID_1]?.name || "Node 1" 
+                                       : nodeConfigs[import.meta.env.VITE_NODE_ID_2]?.name || "Node 2"
+                    ]}
                   />
                 }
               />
               <Area
-                dataKey="value"
+                dataKey="node1"
                 type="natural"
-                fill={`var(--color-${dataKey})`}
-                stroke={`var(--color-${dataKey})`}
+                fill="var(--color-node1)"
+                stroke="var(--color-node1)"
                 strokeWidth={2}
+                fillOpacity={0.6}
+              />
+              <Area
+                dataKey="node2"
+                type="natural"
+                fill="var(--color-node2)"
+                stroke="var(--color-node2)"
+                strokeWidth={2}
+                fillOpacity={0.6}
               />
             </AreaChart>
           </ChartContainer>
@@ -312,24 +356,31 @@ export default function SensorChart() {
         <Card>
           <CardHeader>
             <CardTitle>Memuat Data Sensor...</CardTitle>
-            <CardDescription>Mengambil data lingkungan...</CardDescription>
+            <CardDescription>Mengambil data lingkungan dari kedua node sensor...</CardDescription>
           </CardHeader>
         </Card>
       </div>
     );
   }
 
+  const latestData = Object.values(apiData);
+  const hasApiData = latestData.length > 0;
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold">Data Cuaca Wonokitri</h1>
         <div className="text-base mt-1">
-          {apiData ? (
-            <>
-              Node: {apiData.id_node} | Last Updated: {new Date(apiData.waktu + 'Z').toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
-            </>
+          {hasApiData ? (
+            <div className="space-y-1">
+              {latestData.map((data, index) => (
+                <div key={data.id_node}>
+                  Node {data.id_node}: Last Updated {new Date(data.waktu + 'Z').toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
+                </div>
+              ))}
+            </div>
           ) : (
-            'Historical data view'
+            'Historical data view - Multiple nodes'
           )}
         </div>
         {error && (
@@ -341,14 +392,14 @@ export default function SensorChart() {
 
       <div className="space-y-6">
         <div className="w-full">
-          {renderChart('rain', historicalData.rain)}
+          {renderMultiNodeChart('rain', historicalData.rain)}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {renderChart('temperature', historicalData.temperature)}
-          {renderChart('humidity', historicalData.humidity)}
-          {renderChart('pressure', historicalData.pressure)}
-          {renderChart('moisture', historicalData.moisture)}
+          {renderMultiNodeChart('temperature', historicalData.temperature)}
+          {renderMultiNodeChart('humidity', historicalData.humidity)}
+          {renderMultiNodeChart('pressure', historicalData.pressure)}
+          {renderMultiNodeChart('moisture', historicalData.moisture)}
         </div>
       </div>
     </div>
