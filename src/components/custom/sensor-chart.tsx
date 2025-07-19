@@ -36,11 +36,11 @@ type DateRange = '1hari' | '1minggu' | '1bulan' | '1tahun' | 'semua';
 const nodeConfigs = {
   [import.meta.env.VITE_NODE_ID_1]: {
     name: "Node 1",
-    color: "#3b82f6", // blue-500
+    color: "#3b82f6",
   },
   [import.meta.env.VITE_NODE_ID_2]: {
     name: "Node 2",
-    color: "#eab308", // yellow-500
+    color: "#eab308",
   },
 };
 
@@ -53,7 +53,6 @@ const dateRangeOptions = [
 ];
 
 export default function SensorChart() {
-  const [apiData, setApiData] = useState<{ [key: string]: SensorData }>({});
   const [historicalData, setHistoricalData] = useState<{
     temperature: MultiNodeChartDataPoint[];
     humidity: MultiNodeChartDataPoint[];
@@ -271,9 +270,6 @@ export default function SensorChart() {
           }
         });
 
-        setApiData(newApiData);
-
-        // Store data for each node
         for (const data of Object.values(newApiData)) {
           await storeSensorData(data);
         }
@@ -331,6 +327,14 @@ export default function SensorChart() {
   };
 
   const renderMultiNodeChart = (dataKey: string, data: MultiNodeChartDataPoint[], label: string, unit: string) => {
+    const filteredData = dataKey === 'moisture' 
+      ? data.map(point => ({
+          ...point,
+          node1: point.node1 === -99 ? null : point.node1,
+          node2: point.node2 === -99 ? null : point.node2,
+        }))
+      : data;
+
     return (
       <Card key={dataKey} className="w-full">
         <CardHeader>
@@ -352,7 +356,7 @@ export default function SensorChart() {
           >
             <AreaChart
               accessibilityLayer
-              data={data}
+              data={filteredData}
               margin={{
                 left: 12,
                 right: 12,
@@ -397,7 +401,7 @@ export default function SensorChart() {
                     }}
                     indicator="dot"
                     formatter={(value) => [
-                      value !== null && value !== undefined ? `${value} ${unit}` : 'No data'
+                      value !== null && value !== undefined && value !== -99 ? `${value} ${unit}` : 'No data'
                     ]}
                   />
                 }
@@ -441,9 +445,6 @@ export default function SensorChart() {
       </div>
     );
   }
-
-  const latestData = Object.values(apiData);
-  const hasApiData = latestData.length > 0;
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
